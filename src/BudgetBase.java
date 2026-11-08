@@ -30,7 +30,9 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     private JButton exitButton;        // Exit button
     private JTextField wagesField;     // Wages text field
     private JTextField loansField;     // Loans text field
+    private JTextField otherField;
     private JTextField totalIncomeField; // Total Income field
+    private JTextField totalIncomeAfterIncomeTaxField;
 
     // constructor - create UI  (dont need to change this)
     public BudgetBase(JFrame frame) {
@@ -52,6 +54,13 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         JLabel wagesLabel = new JLabel("Wages");
         addComponent(wagesLabel, 1, 0);
 
+        // Row 2 - Other label followed by "other" textbox
+        JLabel otherLabel = new JLabel("Other");
+        addComponent(otherLabel,3, 0);
+
+        otherField = new JTextField("", 10);
+        otherField.setHorizontalAlignment(JTextField.RIGHT);
+        addComponent(otherField, 3, 1);
         // set up text field for entering wages
         // Could create method to do below (since this is done several times)
         wagesField = new JTextField("", 10);   // blank initially, with 10 columns
@@ -69,21 +78,30 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
         // Row 3 - Total Income label followed by total income field
         JLabel totalIncomeLabel = new JLabel("Total Income");
-        addComponent(totalIncomeLabel, 3, 0);
+        addComponent(totalIncomeLabel, 4, 0);
 
         // set up text box for displaying total income.  Users cam view, but cannot directly edit it
         totalIncomeField = new JTextField("0", 10);   // 0 initially, with 10 columns
         totalIncomeField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
         totalIncomeField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
-        addComponent(totalIncomeField, 3, 1);  
+        addComponent(totalIncomeField, 4, 1); 
+        
+        JLabel totalIncomeAfterIncomeTaxLabel = new JLabel("Total income after income tax");
+        addComponent(totalIncomeAfterIncomeTaxLabel, 5, 0);
+
+        // set up text box for displaying total income.  Users cam view, but cannot directly edit it
+        totalIncomeAfterIncomeTaxField = new JTextField("0", 10);   // 0 initially, with 10 columns
+        totalIncomeAfterIncomeTaxField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
+        totalIncomeAfterIncomeTaxField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
+        addComponent(totalIncomeAfterIncomeTaxField, 5, 1); 
 
         // Row 4 - Calculate Button
         calculateButton = new JButton("Calculate");
-        addComponent(calculateButton, 4, 0);  
+        addComponent(calculateButton, 6, 0);  
 
         // Row 5 - Exit Button
         exitButton = new JButton("Exit");
-        addComponent(exitButton, 5, 0);  
+        addComponent(exitButton, 7, 0);  
 
         // set up  listeners (in a spearate method)
         initListeners();
@@ -104,12 +122,14 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         calculateButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 calculateTotalIncome();
+                calculateIncomeAfterScottishIncomeTax();
             }
         });
-                // wagewsField - call calculateTotalIncome() when pressed
+        // wagewsField - call calculateTotalIncome() when pressed
         wagesField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 calculateTotalIncome();
+                calculateIncomeAfterScottishIncomeTax();
             }
         });
 
@@ -124,6 +144,70 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
     }
 
+   
+    private double calculateIncomeAfterScottishIncomeTax() {
+
+        double top = 125140;
+        double advanced = 75000;
+        double higher = 43662;
+        double intermediate = 29526;
+        double basic = 16537;
+        double starter = 12570;
+
+        double tax = 0;
+
+        double wages = getTextFieldValue(wagesField);
+        double loans = getTextFieldValue(loansField);
+        double other = getTextFieldValue(otherField);
+        
+        double annualIncome = wages + other;
+
+        double totalIncomeAfterIncomeTax = 0;
+
+        // if bellow starter(Personal allowence) which is 12570
+        // this to remove unecessary overhead of 
+        if (annualIncome <= starter) {
+
+            totalIncomeAfterIncomeTax = annualIncome - tax + loans;
+            totalIncomeAfterIncomeTaxField.setText(String.format("%.2f",totalIncomeAfterIncomeTax));
+            return totalIncomeAfterIncomeTax;
+        }
+
+        if (annualIncome > starter) {
+            tax += (Math.min(annualIncome, basic) - starter) * 0.19;
+        }
+
+        if (annualIncome > basic) {
+            tax += (Math.min(annualIncome, intermediate) - basic) * 0.20;
+        }
+
+        if (annualIncome > intermediate) {
+            tax += (Math.min(annualIncome, higher) - intermediate) * 0.21;
+        }
+
+        if (annualIncome > higher) {
+            tax += (Math.min(annualIncome, advanced) - higher) * 0.42;
+        }
+
+        if (annualIncome > advanced) {
+            tax += (Math.min(annualIncome, top) - advanced) * 0.45;
+        }
+
+        if (annualIncome > top) {
+            tax += (annualIncome - top) * 0.48;
+        }
+
+        if (annualIncome > 100000) {
+            double lostAllowance = Math.min(12570, (annualIncome - 100000) / 2);
+
+            tax += lostAllowance * 0.45;
+        }
+
+        totalIncomeAfterIncomeTax = annualIncome - tax + loans;
+        totalIncomeAfterIncomeTaxField.setText(String.format("%.2f",totalIncomeAfterIncomeTax));
+        return totalIncomeAfterIncomeTax;
+    }
+
     // update totalIncomeField (eg, when Calculate is pressed)
     // use double to hold numbers, so user can type fractional amounts such as 134.50
     public double calculateTotalIncome() {
@@ -131,16 +215,17 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         // get values from income text fields.  valie is NaN if an error occurs
         double wages = getTextFieldValue(wagesField);
         double loans = getTextFieldValue(loansField);
+        double other = getTextFieldValue(otherField);
 
         // clear total field and return if any value is NaN (error)
-        if (Double.isNaN(wages) || Double.isNaN(loans)) {
+        if (Double.isNaN(wages) || Double.isNaN(loans) || Double.isNaN(other)) {
             totalIncomeField.setText("");  // clear total income field
             wages = 0.0;
             return wages;   // exit method and do nothing
         }
 
         // otherwise calculate total income and update text field
-        double totalIncome = wages + loans;
+        double totalIncome = wages + loans + other;
         totalIncomeField.setText(String.format("%.2f",totalIncome));  // format with 2 digits after the .
         return totalIncome;
     }
