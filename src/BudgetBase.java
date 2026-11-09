@@ -11,7 +11,7 @@
 
 // Ehud Reiter Aug 204
 
-package Budget;
+//package Budget;
 
 // Swing imports
 import javax.swing.*;
@@ -33,6 +33,10 @@ public class BudgetBase extends JPanel {                                    // b
     private JTextField otherField;                                          // Other field 
     private JTextField totalIncomeField;                                    // Total Income field
     private JTextField totalIncomeAfterIncomeTaxField;                      // Total Income after scottish income tax
+    private JTextField rentField;                                           // Amount spent on rent
+    private JTextField foodField;                                           // Amount spent on food
+    private JTextField restaurantsField;                                    // Amount spent on restaurants.
+    private JTextField totalAmountSpentField;                               // Total amount spent
 
     // constructor - create UI  (dont need to change this)
     public BudgetBase(JFrame frame) {
@@ -53,55 +57,101 @@ public class BudgetBase extends JPanel {                                    // b
         // Row 1 - Wages label followed by wages textbox
         JLabel wagesLabel = new JLabel("Wages");
         addComponent(wagesLabel, 1, 0);
-
-        // Row 2 - Other label followed by "other" textbox
-        JLabel otherLabel = new JLabel("Other");
-        addComponent(otherLabel,3, 0);
-
-        otherField = new JTextField("", 10);
-        otherField.setHorizontalAlignment(JTextField.RIGHT);
-        addComponent(otherField, 3, 1);
-        // set up text field for entering wages
-        // Could create method to do below (since this is done several times)
-        wagesField = new JTextField("", 10);                                // blank initially, with 10 columns
-        wagesField.setHorizontalAlignment(JTextField.RIGHT) ;               // number is at right end of field
-        addComponent(wagesField, 1, 1);   
+        
 
         // Row 2 - Loans label followed by loans textbox
         JLabel loansLabel = new JLabel("Loans");
         addComponent(loansLabel, 2, 0);
+
+        // Row 3 - Other label followed by "other" textbox
+        JLabel otherLabel = new JLabel("Other");
+        addComponent(otherLabel,3, 0);
+
+        // Row 4 - rent label followed by rent textbox
+        JLabel rentLabel = new JLabel("Rent");
+        addComponent(rentLabel, 4, 0);
+
+        // Row 5 - food label followed by food textbox
+        JLabel foodLabel = new JLabel("Food");
+        addComponent(foodLabel, 5, 0);
+
+        // Row 6 - restaurants label followed by restaurants textbox
+        JLabel restaurantsLabel = new JLabel("Restaurants");
+        addComponent(restaurantsLabel, 6, 0);
+
+
+
+        // set up text field for entering wages
+        // Could create method to do below (since this is done several times)
+        wagesField = new JTextField("", 10);                                // blank initially, with 10 columns
+        wagesField.setHorizontalAlignment(JTextField.RIGHT) ;               // number is at right end of field
+        addComponent(wagesField, 1, 1); 
 
         // set up text box for entering loans
         loansField = new JTextField("", 10);                                // blank initially, with 10 columns
         loansField.setHorizontalAlignment(JTextField.RIGHT) ;               // number is at right end of field
         addComponent(loansField, 2, 1); 
 
-        // Row 3 - Total Income label followed by total income field
+        otherField = new JTextField("", 10);
+        otherField.setHorizontalAlignment(JTextField.RIGHT);
+        addComponent(otherField, 3, 1);
+
+        rentField = new JTextField("", 10);
+        rentField.setHorizontalAlignment(JTextField.RIGHT);
+        addComponent(rentField, 4, 1);
+
+        foodField = new JTextField("", 10);
+        foodField.setHorizontalAlignment(JTextField.RIGHT);
+        addComponent(foodField, 5, 1);
+
+        restaurantsField = new JTextField("", 10);
+        restaurantsField.setHorizontalAlignment(JTextField.RIGHT);
+        addComponent(restaurantsField, 6, 1);
+        
+
+        
+
+        // Row 7 - total Income label followed by total income field
         JLabel totalIncomeLabel = new JLabel("Total Income");
-        addComponent(totalIncomeLabel, 4, 0);
+        addComponent(totalIncomeLabel, 7, 0);
+
+        // Row 8 - total total Income After Income Tax Label followed by total Income After Income Tax field
+        JLabel totalIncomeAfterIncomeTaxLabel = new JLabel("Total income after income tax");
+        addComponent(totalIncomeAfterIncomeTaxLabel, 8, 0);
+
+
+        // Row 9 - total amount spent label followed by textbox
+        JLabel totalAmountSpentLabel = new JLabel("Total Amount Spent");
+        addComponent(totalAmountSpentLabel, 9, 0);
+
+
 
         // set up text box for displaying total income.  Users cam view, but cannot directly edit it
         totalIncomeField = new JTextField("0", 10);                         // 0 initially, with 10 columns
         totalIncomeField.setHorizontalAlignment(JTextField.RIGHT) ;         // number is at right end of field
         totalIncomeField.setEditable(false);                                // user cannot directly edit this field (ie, it is read-only)
-        addComponent(totalIncomeField, 4, 1); 
+        addComponent(totalIncomeField, 7, 1); 
         
-        JLabel totalIncomeAfterIncomeTaxLabel = new JLabel("Total income after income tax");
-        addComponent(totalIncomeAfterIncomeTaxLabel, 5, 0);
-
+        
         // set up text box for displaying total income.  Users cam view, but cannot directly edit it
         totalIncomeAfterIncomeTaxField = new JTextField("0", 10);                       // 0 initially, with 10 columns
         totalIncomeAfterIncomeTaxField.setHorizontalAlignment(JTextField.RIGHT) ;       // number is at right end of field
         totalIncomeAfterIncomeTaxField.setEditable(false);                              // user cannot directly edit this field (ie, it is read-only)
-        addComponent(totalIncomeAfterIncomeTaxField, 5, 1); 
+        addComponent(totalIncomeAfterIncomeTaxField, 8, 1); 
 
-        // Row 4 - Calculate Button
+
+        totalAmountSpentField = new JTextField("0", 10);
+        totalAmountSpentField.setHorizontalAlignment(JTextField.RIGHT);
+        totalAmountSpentField.setEditable(false);
+        addComponent(totalAmountSpentField, 9, 1);
+
+        // Row 10 - Calculate Button
         calculateButton = new JButton("Calculate");
-        addComponent(calculateButton, 6, 0);  
+        addComponent(calculateButton, 10, 0);  
 
-        // Row 5 - Exit Button
+        // Row 11 - Exit Button
         exitButton = new JButton("Exit");
-        addComponent(exitButton, 7, 0);  
+        addComponent(exitButton, 11, 0);  
 
         // set up  listeners (in a spearate method)
         initListeners();
@@ -118,11 +168,12 @@ public class BudgetBase extends JPanel {                                    // b
             }
         });
 
-        // calculateButton - call calculateTotalIncome() when pressed
+        // calculateButton - eg, call calculateTotalIncome when pressed
         calculateButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 calculateTotalIncome();
                 calculateIncomeAfterScottishIncomeTax();
+                calculateExpenditure();
             }
         });
         // wagewsField - call calculateTotalIncome() when pressed
@@ -142,6 +193,32 @@ public class BudgetBase extends JPanel {                                    // b
         layoutConstraints.gridy = gridrow;
         add(component, layoutConstraints);
 
+    }
+
+    // updates tatalAmountSpentField after (eg, when Calculate is pressed)
+    // sums total expenditure for food, rent, restaurants(after VAT)
+    private double calculateExpenditure() {
+
+        double totalAmount = 0.0;
+
+        double rent = getTextFieldValue(rentField);
+        double food = getTextFieldValue(foodField);
+        double restaurants = getTextFieldValue(restaurantsField);
+
+        
+        if (Double.isNaN(rent) || Double.isNaN(food) || Double.isNaN(restaurants)) {
+            totalAmountSpentField.setText("");                                         // clear total amount spent field 
+            totalAmount = 0.0;
+            return totalAmount;                                                        // exit method and do nothing
+        }
+
+
+        if (restaurants > 0) restaurants = (restaurants * 0.2) + restaurants;          // after VAT deduction
+        totalAmount = rent + food + restaurants;
+
+
+        totalAmountSpentField.setText(String.format("%.2f",totalAmount));
+        return totalAmount;
     }
 
     // update totalIncomeAfterIncomeTaxField (eg, when Calculate is pressed)
@@ -171,6 +248,12 @@ public class BudgetBase extends JPanel {                                    // b
         double annualIncome = wages + other;
 
         double totalIncomeAfterIncomeTax = 0;
+
+        if (Double.isNaN(wages) || Double.isNaN(loans) || Double.isNaN(other)) {
+            totalIncomeAfterIncomeTaxField.setText("");                                      // clear total income after income tax field
+            wages = 0.0;
+            return wages;                                                                   // exit method and do nothing
+        }
 
         // if bellow starter(Personal allowence) which is 12570
         // this to remove unecessary overhead of going through other conditionals
