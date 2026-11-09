@@ -168,7 +168,7 @@ public class BudgetBase extends JPanel {                                    // b
             }
         });
 
-        // calculateButton - call calculateTotalIncome() when pressed
+        // calculateButton - eg, call calculateTotalIncome when pressed
         calculateButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 calculateTotalIncome();
