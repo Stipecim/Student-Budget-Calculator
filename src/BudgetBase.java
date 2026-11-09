@@ -19,26 +19,26 @@ import java.awt.event.*;
 import java.awt.*;
 
 // class definition
-public class BudgetBase extends JPanel {    // based on Swing JPanel
+public class BudgetBase extends JPanel {                                    // based on Swing JPanel
 
     // high level UI stuff
-    JFrame topLevelFrame;  // top-level JFrame
-    GridBagConstraints layoutConstraints = new GridBagConstraints(); // used to control layout
+    JFrame topLevelFrame;                                                   // top-level JFrame
+    GridBagConstraints layoutConstraints = new GridBagConstraints();        // used to control layout
 
     // widgets which may have listeners and/or values
-    private JButton calculateButton;   // Calculate button
-    private JButton exitButton;        // Exit button
-    private JTextField wagesField;     // Wages text field
-    private JTextField loansField;     // Loans text field
-    private JTextField otherField;
-    private JTextField totalIncomeField; // Total Income field
-    private JTextField totalIncomeAfterIncomeTaxField;
+    private JButton calculateButton;                                        // Calculate button
+    private JButton exitButton;                                             // Exit button
+    private JTextField wagesField;                                          // Wages text field
+    private JTextField loansField;                                          // Loans text field
+    private JTextField otherField;                                          // Other field 
+    private JTextField totalIncomeField;                                    // Total Income field
+    private JTextField totalIncomeAfterIncomeTaxField;                      // Total Income after scottish income tax
 
     // constructor - create UI  (dont need to change this)
     public BudgetBase(JFrame frame) {
-        topLevelFrame = frame; // keep track of top-level frame
-        setLayout(new GridBagLayout());  // use GridBag layout
-        initComponents();  // initalise components
+        topLevelFrame = frame;                      // keep track of top-level frame
+        setLayout(new GridBagLayout());             // use GridBag layout
+        initComponents();                           // initalise components
     }
 
     // initialise componenents
@@ -63,8 +63,8 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         addComponent(otherField, 3, 1);
         // set up text field for entering wages
         // Could create method to do below (since this is done several times)
-        wagesField = new JTextField("", 10);   // blank initially, with 10 columns
-        wagesField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
+        wagesField = new JTextField("", 10);                                // blank initially, with 10 columns
+        wagesField.setHorizontalAlignment(JTextField.RIGHT) ;               // number is at right end of field
         addComponent(wagesField, 1, 1);   
 
         // Row 2 - Loans label followed by loans textbox
@@ -72,8 +72,8 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         addComponent(loansLabel, 2, 0);
 
         // set up text box for entering loans
-        loansField = new JTextField("", 10);   // blank initially, with 10 columns
-        loansField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
+        loansField = new JTextField("", 10);                                // blank initially, with 10 columns
+        loansField.setHorizontalAlignment(JTextField.RIGHT) ;               // number is at right end of field
         addComponent(loansField, 2, 1); 
 
         // Row 3 - Total Income label followed by total income field
@@ -81,18 +81,18 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         addComponent(totalIncomeLabel, 4, 0);
 
         // set up text box for displaying total income.  Users cam view, but cannot directly edit it
-        totalIncomeField = new JTextField("0", 10);   // 0 initially, with 10 columns
-        totalIncomeField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
-        totalIncomeField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
+        totalIncomeField = new JTextField("0", 10);                         // 0 initially, with 10 columns
+        totalIncomeField.setHorizontalAlignment(JTextField.RIGHT) ;         // number is at right end of field
+        totalIncomeField.setEditable(false);                                // user cannot directly edit this field (ie, it is read-only)
         addComponent(totalIncomeField, 4, 1); 
         
         JLabel totalIncomeAfterIncomeTaxLabel = new JLabel("Total income after income tax");
         addComponent(totalIncomeAfterIncomeTaxLabel, 5, 0);
 
         // set up text box for displaying total income.  Users cam view, but cannot directly edit it
-        totalIncomeAfterIncomeTaxField = new JTextField("0", 10);   // 0 initially, with 10 columns
-        totalIncomeAfterIncomeTaxField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
-        totalIncomeAfterIncomeTaxField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
+        totalIncomeAfterIncomeTaxField = new JTextField("0", 10);                       // 0 initially, with 10 columns
+        totalIncomeAfterIncomeTaxField.setHorizontalAlignment(JTextField.RIGHT) ;       // number is at right end of field
+        totalIncomeAfterIncomeTaxField.setEditable(false);                              // user cannot directly edit this field (ie, it is read-only)
         addComponent(totalIncomeAfterIncomeTaxField, 5, 1); 
 
         // Row 4 - Calculate Button
@@ -137,22 +137,30 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
     // add a component at specified row and column in UI.  (0,0) is top-left corner
     private void addComponent(Component component, int gridrow, int gridcol) {
-        layoutConstraints.fill = GridBagConstraints.HORIZONTAL;   // always use horixontsl filll
+        layoutConstraints.fill = GridBagConstraints.HORIZONTAL;                     // always use horixontsl filll
         layoutConstraints.gridx = gridcol;
         layoutConstraints.gridy = gridrow;
         add(component, layoutConstraints);
 
     }
 
-   
+    // update totalIncomeAfterIncomeTaxField (eg, when Calculate is pressed)
+    // this algotirthm is based on information here https://www.mygov.scot/scottish-income-tax/current-income-tax-rates
+    /**
+     * Algorithm:
+     *  if annual income exceedes Personal allowence calculate tax for each band 
+     *  until reaches band where persons annual income. Add all taxed bands.
+     *  If annual income is higher 100000 than for every 2£ of income take 1£
+     *  of Personal allowance.
+     */
     private double calculateIncomeAfterScottishIncomeTax() {
 
-        double top = 125140;
-        double advanced = 75000;
-        double higher = 43662;
-        double intermediate = 29526;
-        double basic = 16537;
-        double starter = 12570;
+        final double top = 125140;
+        final double advanced = 75000;
+        final double higher = 43662;
+        final double intermediate = 29526;
+        final double basic = 16537;
+        final double starter = 12570;
 
         double tax = 0;
 
@@ -165,7 +173,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         double totalIncomeAfterIncomeTax = 0;
 
         // if bellow starter(Personal allowence) which is 12570
-        // this to remove unecessary overhead of 
+        // this to remove unecessary overhead of going through other conditionals
         if (annualIncome <= starter) {
 
             totalIncomeAfterIncomeTax = annualIncome - tax + loans;
@@ -173,6 +181,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
             return totalIncomeAfterIncomeTax;
         }
 
+        
         if (annualIncome > starter) {
             tax += (Math.min(annualIncome, basic) - starter) * 0.19;
         }
@@ -219,14 +228,14 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
         // clear total field and return if any value is NaN (error)
         if (Double.isNaN(wages) || Double.isNaN(loans) || Double.isNaN(other)) {
-            totalIncomeField.setText("");  // clear total income field
+            totalIncomeField.setText("");                                                   // clear total income field
             wages = 0.0;
-            return wages;   // exit method and do nothing
+            return wages;                                                                   // exit method and do nothing
         }
 
         // otherwise calculate total income and update text field
         double totalIncome = wages + loans + other;
-        totalIncomeField.setText(String.format("%.2f",totalIncome));  // format with 2 digits after the .
+        totalIncomeField.setText(String.format("%.2f",totalIncome));                        // format with 2 digits after the .
         return totalIncome;
     }
 
@@ -236,19 +245,19 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     private double getTextFieldValue(JTextField field) {
 
         // get value as String from field
-        String fieldString = field.getText();  // get text from text field
+        String fieldString = field.getText();                                       // get text from text field
 
-        if (fieldString.isBlank()) {   // if text field is blank, return 0
+        if (fieldString.isBlank()) {                                                // if text field is blank, return 0
             return 0;
         }
 
         else {  // if text field is not blank, parse it into a double
             //return Double.parseDouble(fieldString);
             try {
-                return Double.parseDouble(fieldString);  // parse field number into a double
-             } catch (java.lang.NumberFormatException ex) {  // catch invalid number exception
-                JOptionPane.showMessageDialog(topLevelFrame, "Please enter a valid number");  // show error message
-                return Double.NaN;  // return NaN to show that field is not a number
+                return Double.parseDouble(fieldString);                                             // parse field number into a double
+             } catch (java.lang.NumberFormatException ex) {                                         // catch invalid number exception
+                JOptionPane.showMessageDialog(topLevelFrame, "Please enter a valid number");        // show error message
+                return Double.NaN;                                                                  // return NaN to show that field is not a number
             }
         }
     }
