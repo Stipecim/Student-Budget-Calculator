@@ -20,4 +20,11 @@ This is student budget calculator
     Added functionality:
         - calculateExpenditure
 ```
-
+- **Remaining Balance:**
+```
+    Added JTextField for GUI:
+        - remainingBalanceField;
+    Added functionality:
+        - calculateRemainingBalance
+        - remainingBalanceField.actionListener          // action triggered after JTextField update       
+```

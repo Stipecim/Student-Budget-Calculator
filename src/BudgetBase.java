@@ -37,6 +37,7 @@ public class BudgetBase extends JPanel {                                    // b
     private JTextField foodField;                                           // Amount spent on food
     private JTextField restaurantsField;                                    // Amount spent on restaurants.
     private JTextField totalAmountSpentField;                               // Total amount spent
+    private JTextField remainingBalanceField;                                // Remaining balance 
 
     // constructor - create UI  (dont need to change this)
     public BudgetBase(JFrame frame) {
@@ -124,6 +125,10 @@ public class BudgetBase extends JPanel {                                    // b
         JLabel totalAmountSpentLabel = new JLabel("Total Amount Spent");
         addComponent(totalAmountSpentLabel, 9, 0);
 
+        // Row 10 - remaining balance label followed by textbox
+        JLabel remainingBalanceLabel = new JLabel("Remaining Balance");
+        addComponent(remainingBalanceLabel, 10, 0);
+
 
 
         // set up text box for displaying total income.  Users cam view, but cannot directly edit it
@@ -145,13 +150,18 @@ public class BudgetBase extends JPanel {                                    // b
         totalAmountSpentField.setEditable(false);
         addComponent(totalAmountSpentField, 9, 1);
 
-        // Row 10 - Calculate Button
-        calculateButton = new JButton("Calculate");
-        addComponent(calculateButton, 10, 0);  
+        remainingBalanceField = new JTextField("0", 10);
+        remainingBalanceField.setHorizontalAlignment(JTextField.RIGHT);
+        remainingBalanceField.setEditable(false);
+        addComponent(remainingBalanceField, 10, 1);
 
-        // Row 11 - Exit Button
+        // Row 11 - Calculate Button
+        calculateButton = new JButton("Calculate");
+        addComponent(calculateButton, 11, 0);  
+
+        // Row 12 - Exit Button
         exitButton = new JButton("Exit");
-        addComponent(exitButton, 11, 0);  
+        addComponent(exitButton, 12, 0);  
 
         // set up  listeners (in a spearate method)
         initListeners();
@@ -174,6 +184,7 @@ public class BudgetBase extends JPanel {                                    // b
                 calculateTotalIncome();
                 calculateIncomeAfterScottishIncomeTax();
                 calculateExpenditure();
+                calculateRemainingBalance();
             }
         });
         // wagewsField - call calculateTotalIncome() when pressed
@@ -183,7 +194,19 @@ public class BudgetBase extends JPanel {                                    // b
                 calculateIncomeAfterScottishIncomeTax();
             }
         });
+        // listens to remaining balance field being updated 
+        remainingBalanceField.addActionListener(new java.awt.event.ActionListener() {
+        public void actionPerformed(ActionEvent e) {
 
+            double remainingBalance = getTextFieldValue(remainingBalanceField);
+
+            if (remainingBalance < 0) {
+                remainingBalanceField.setForeground(Color.RED);
+            } else {
+                remainingBalanceField.setForeground(Color.BLACK);
+            }
+        }
+});
     }
 
     // add a component at specified row and column in UI.  (0,0) is top-left corner
@@ -195,6 +218,15 @@ public class BudgetBase extends JPanel {                                    // b
 
     }
 
+    private double calculateRemainingBalance() {
+
+        double totalAmountSpent = getTextFieldValue(totalAmountSpentField);
+        double totalIncomeAfterIncomeTax = getTextFieldValue(totalIncomeAfterIncomeTaxField);
+
+        remainingBalanceField.setText(String.format("%.2f", totalIncomeAfterIncomeTax - totalAmountSpent));
+        remainingBalanceField.postActionEvent();                                                                // trigger the action listener
+        return  totalIncomeAfterIncomeTax - totalAmountSpent; 
+    }
     // updates tatalAmountSpentField after (eg, when Calculate is pressed)
     // sums total expenditure for food, rent, restaurants(after VAT)
     private double calculateExpenditure() {
