@@ -196,17 +196,17 @@ public class BudgetBase extends JPanel {                                    // b
         });
         // listens to remaining balance field being updated 
         remainingBalanceField.addActionListener(new java.awt.event.ActionListener() {
-        public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {
 
-            double remainingBalance = getTextFieldValue(remainingBalanceField);
+                double remainingBalance = getTextFieldValue(remainingBalanceField);
 
-            if (remainingBalance < 0) {
-                remainingBalanceField.setForeground(Color.RED);
-            } else {
-                remainingBalanceField.setForeground(Color.BLACK);
+                if (remainingBalance < 0) {
+                    remainingBalanceField.setForeground(Color.RED);
+                } else {
+                    remainingBalanceField.setForeground(Color.BLACK);
+                }
             }
-        }
-});
+        });
     }
 
     // add a component at specified row and column in UI.  (0,0) is top-left corner
@@ -227,6 +227,7 @@ public class BudgetBase extends JPanel {                                    // b
         remainingBalanceField.postActionEvent();                                                                // trigger the action listener
         return  totalIncomeAfterIncomeTax - totalAmountSpent; 
     }
+
     // updates tatalAmountSpentField after (eg, when Calculate is pressed)
     // sums total expenditure for food, rent, restaurants(after VAT)
     private double calculateExpenditure() {
@@ -371,14 +372,14 @@ public class BudgetBase extends JPanel {                                    // b
             try {
                 return Double.parseDouble(fieldString);                                             // parse field number into a double
              } catch (java.lang.NumberFormatException ex) {                                         // catch invalid number exception
-                JOptionPane.showMessageDialog(topLevelFrame, "Please enter a valid number");        // show error message
+                JOptionPane.showMessageDialog(topLevelFrame, "Please enter a valid number", "Invalid Input", JOptionPane.INFORMATION_MESSAGE);        // show error message
                 return Double.NaN;                                                                  // return NaN to show that field is not a number
             }
         }
     }
 
 
-// below is standard code to set up Swing, which students shouldnt need to edit much
+    // below is standard code to set up Swing, which students shouldnt need to edit much
     // standard mathod to show UI
     private static void createAndShowGUI() {
  
