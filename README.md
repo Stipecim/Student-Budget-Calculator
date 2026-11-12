@@ -2,6 +2,7 @@
 This is student budget calculator
 
 ## What I have done
+### Basic System
 - **Income calculator:**
 ```
     Added JTextField for GUI:
@@ -32,4 +33,12 @@ This is student budget calculator
 ```
     Inside getTextField() exception handling added:
         - Dialog Message title and type of message 
+```
+
+### Extensions
+
+- **Time Periods**
+```
+    Added:
+        - timePeriod enum
 ```
