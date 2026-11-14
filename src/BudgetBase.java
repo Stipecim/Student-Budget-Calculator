@@ -37,7 +37,16 @@ public class BudgetBase extends JPanel {                                    // b
     private JTextField foodField;                                           // Amount spent on food
     private JTextField restaurantsField;                                    // Amount spent on restaurants.
     private JTextField totalAmountSpentField;                               // Total amount spent
-    private JTextField remainingBalanceField;                                // Remaining balance 
+    private JTextField remainingBalanceField;                               // Remaining balance 
+
+    private JRadioButton weeklyButton;                                      // Weekly radio button
+    private JRadioButton monthlyButton;                                     // monthly radio button
+    private JRadioButton yearlyButton;                                      // yearly radio button 
+
+    private ButtonGroup periodGroup;                                        // One button can be on per group
+
+    private TimePeriod timePeriod;                                          // Button group state for evaluating answers eg. toggled button weekly
+
 
     // constructor - create UI  (dont need to change this)
     public BudgetBase(JFrame frame) {
@@ -50,6 +59,36 @@ public class BudgetBase extends JPanel {                                    // b
     // Note that this method is quite long.  Can be shortened by putting Action Listener stuff in a separate method
     // will be generated automatically by IntelliJ, Eclipse, etc
     private void initComponents() { 
+
+        // initializing periodGroup component
+        periodGroup = new ButtonGroup();
+        
+        // initializing weakly radio buttons 
+        weeklyButton = new JRadioButton("Weekly");
+        monthlyButton = new JRadioButton("Monthly");
+        yearlyButton = new JRadioButton("Yearly");
+
+        // grouping initialized buttons 
+        periodGroup.add(weeklyButton);
+        periodGroup.add(monthlyButton);
+        periodGroup.add(yearlyButton);
+
+        // Select Monthly by default
+        yearlyButton.setSelected(true);
+
+        // default state of button
+        timePeriod = TimePeriod.YEARLY;
+
+        // Arrange buttons horizontally
+        JPanel periodPanel = new JPanel(new GridLayout(1, 3, 0, 0));
+
+        // adding buttons to the panel for gui display
+        periodPanel.add(weeklyButton);
+        periodPanel.add(monthlyButton);
+        periodPanel.add(yearlyButton);
+
+        // Top row 0 - period panel with radio buttons
+        addComponent(periodPanel, 0, 1);
 
         // Top row (0) - "INCOME" label
         JLabel incomeLabel = new JLabel("INCOME");
@@ -110,7 +149,6 @@ public class BudgetBase extends JPanel {                                    // b
         addComponent(restaurantsField, 6, 1);
         
 
-        
 
         // Row 7 - total Income label followed by total income field
         JLabel totalIncomeLabel = new JLabel("Total Income");
@@ -170,6 +208,27 @@ public class BudgetBase extends JPanel {                                    // b
     // set up listeners
     // initially just for buttons, can add listeners for text fields
     private void initListeners() {
+
+        // Weekly radio button
+        weeklyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                timePeriod = TimePeriod.WEEKLY;
+            }
+        });
+
+        // Monthly radio button
+        monthlyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                timePeriod = TimePeriod.MONTHLY;
+            }
+        });
+
+        // Yearly radio button
+        yearlyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                timePeriod = TimePeriod.YEARLY;
+            }
+        });
 
         // exitButton - exit program when pressed
         exitButton.addActionListener(new java.awt.event.ActionListener() {
@@ -255,13 +314,19 @@ public class BudgetBase extends JPanel {                                    // b
     }
 
     // update totalIncomeAfterIncomeTaxField (eg, when Calculate is pressed)
-    // this algotirthm is based on information here https://www.mygov.scot/scottish-income-tax/current-income-tax-rates
+    // this algotirthm is based on Scottish income tax provided here https://www.mygov.scot/scottish-income-tax/current-income-tax-rates
     /**
      * Algorithm:
-     *  if annual income exceedes Personal allowence calculate tax for each band 
-     *  until reaches band where persons annual income. Add all taxed bands.
-     *  If annual income is higher 100000 than for every 2£ of income take 1£
-     *  of Personal allowance.
+     * 
+     *  timeperiod = 1(Year) || 12(Months) || 52 (Weeks)
+     *  
+     *  Multiply wages and other income source that does not include student loan 
+     *  with time period and then if annual income exceedes Personal allowence 
+     *  calculate tax for each band until band where persons annual income is. Add
+     *  all taxed bands. If annual income is higher 100000 than for every 2£ of 
+     *  income take 1£of Personal allowance. Finally divide time period with 
+     *  calculated annual income and then add student loans to it. 
+     *   
      */
     private double calculateIncomeAfterScottishIncomeTax() {
 
@@ -278,12 +343,16 @@ public class BudgetBase extends JPanel {                                    // b
         double loans = getTextFieldValue(loansField);
         double other = getTextFieldValue(otherField);
         
-        double annualIncome = wages + other;
+        double annualIncome = (wages + other) * timePeriod.getValue();                      // e.g person recieves income monthly so time period is 12
 
         double totalIncomeAfterIncomeTax = 0;
 
-        if (Double.isNaN(wages) || Double.isNaN(loans) || Double.isNaN(other)) {
-            totalIncomeAfterIncomeTaxField.setText("");                                      // clear total income after income tax field
+        if (Double.isNaN(wages) || 
+            Double.isNaN(loans) || 
+            Double.isNaN(other)
+            ) 
+        {
+            totalIncomeAfterIncomeTaxField.setText("");                                     // clear total income after income tax field
             wages = 0.0;
             return wages;                                                                   // exit method and do nothing
         }
@@ -293,7 +362,14 @@ public class BudgetBase extends JPanel {                                    // b
         if (annualIncome <= starter) {
 
             totalIncomeAfterIncomeTax = annualIncome - tax + loans;
-            totalIncomeAfterIncomeTaxField.setText(String.format("%.2f",totalIncomeAfterIncomeTax));
+            totalIncomeAfterIncomeTaxField
+            .setText(
+                String.format(
+                    "%.2f",
+                    totalIncomeAfterIncomeTax
+                )
+            );
+
             return totalIncomeAfterIncomeTax;
         }
 
@@ -328,10 +404,12 @@ public class BudgetBase extends JPanel {                                    // b
             tax += lostAllowance * 0.45;
         }
 
-        totalIncomeAfterIncomeTax = annualIncome - tax + loans;
+        totalIncomeAfterIncomeTax = ((annualIncome - tax) / timePeriod.getValue()) + loans;
         totalIncomeAfterIncomeTaxField.setText(String.format("%.2f",totalIncomeAfterIncomeTax));
         return totalIncomeAfterIncomeTax;
     }
+
+    
 
     // update totalIncomeField (eg, when Calculate is pressed)
     // use double to hold numbers, so user can type fractional amounts such as 134.50
@@ -372,7 +450,12 @@ public class BudgetBase extends JPanel {                                    // b
             try {
                 return Double.parseDouble(fieldString);                                             // parse field number into a double
              } catch (java.lang.NumberFormatException ex) {                                         // catch invalid number exception
-                JOptionPane.showMessageDialog(topLevelFrame, "Please enter a valid number", "Invalid Input", JOptionPane.INFORMATION_MESSAGE);        // show error message
+                JOptionPane.showMessageDialog(
+                    topLevelFrame, 
+                    "Please enter a valid number", 
+                    "Invalid Input", 
+                    JOptionPane.INFORMATION_MESSAGE
+                );                                                                                  // show error message
                 return Double.NaN;                                                                  // return NaN to show that field is not a number
             }
         }

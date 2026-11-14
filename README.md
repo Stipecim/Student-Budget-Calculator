@@ -39,6 +39,11 @@ This is student budget calculator
 
 - **Time Periods**
 ```
-    Added:
+    Added new type and components:
         - timePeriod enum
+        - JRadioButton weeklyButton, monthlyButton, yerlyButton
+        - ButtonGroup periodGroup
+    Added functionality to calculateIncomeAfterScottishIncomeTax:
+        - Inside multiply chosen timePeriod with wages and other income recieved in that time period
+        - after income divide that timePeriod again with annual income after tax
 ```
