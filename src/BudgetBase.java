@@ -15,6 +15,10 @@
 
 // Swing imports
 import javax.swing.*;
+import javax.swing.event.DocumentListener;
+// import javax.swing.text.Document; 
+import javax.swing.event.DocumentEvent;
+
 import java.awt.event.*;
 import java.awt.*;
 
@@ -26,7 +30,6 @@ public class BudgetBase extends JPanel {                                    // b
     GridBagConstraints layoutConstraints = new GridBagConstraints();        // used to control layout
 
     // widgets which may have listeners and/or values
-    private JButton calculateButton;                                        // Calculate button
     private JButton exitButton;                                             // Exit button
     private JTextField wagesField;                                          // Wages text field
     private JTextField loansField;                                          // Loans text field
@@ -193,10 +196,6 @@ public class BudgetBase extends JPanel {                                    // b
         remainingBalanceField.setEditable(false);
         addComponent(remainingBalanceField, 10, 1);
 
-        // Row 11 - Calculate Button
-        calculateButton = new JButton("Calculate");
-        addComponent(calculateButton, 11, 0);  
-
         // Row 12 - Exit Button
         exitButton = new JButton("Exit");
         addComponent(exitButton, 12, 0);  
@@ -213,6 +212,8 @@ public class BudgetBase extends JPanel {                                    // b
         weeklyButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 timePeriod = TimePeriod.WEEKLY;
+            
+                calculateAll();
             }
         });
 
@@ -220,6 +221,8 @@ public class BudgetBase extends JPanel {                                    // b
         monthlyButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 timePeriod = TimePeriod.MONTHLY;
+
+                calculateAll();
             }
         });
 
@@ -227,6 +230,8 @@ public class BudgetBase extends JPanel {                                    // b
         yearlyButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 timePeriod = TimePeriod.YEARLY;
+
+                calculateAll();
             }
         });
 
@@ -237,22 +242,21 @@ public class BudgetBase extends JPanel {                                    // b
             }
         });
 
-        // calculateButton - eg, call calculateTotalIncome when pressed
-        calculateButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                calculateTotalIncome();
-                calculateIncomeAfterScottishIncomeTax();
-                calculateExpenditure();
-                calculateRemainingBalance();
-            }
-        });
-        // wagewsField - call calculateTotalIncome() when pressed
-        wagesField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                calculateTotalIncome();
-                calculateIncomeAfterScottishIncomeTax();
-            }
-        });
+
+        //event trigger after user enters/deletes single value to/from input field 
+        addDocumentListenerForAutomaticCalculations(wagesField);
+
+        addDocumentListenerForAutomaticCalculations(loansField);
+      
+        addDocumentListenerForAutomaticCalculations(otherField);
+
+        addDocumentListenerForAutomaticCalculations(foodField);
+
+        addDocumentListenerForAutomaticCalculations(rentField);
+
+        addDocumentListenerForAutomaticCalculations(restaurantsField);
+
+
         // listens to remaining balance field being updated 
         remainingBalanceField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -277,6 +281,13 @@ public class BudgetBase extends JPanel {                                    // b
 
     }
 
+    private void calculateAll() {
+        calculateTotalIncome();
+        calculateIncomeAfterScottishIncomeTax();
+        calculateExpenditure();
+        calculateRemainingBalance();
+    }
+    
     private double calculateRemainingBalance() {
 
         double totalAmountSpent = getTextFieldValue(totalAmountSpentField);
@@ -450,15 +461,41 @@ public class BudgetBase extends JPanel {                                    // b
             try {
                 return Double.parseDouble(fieldString);                                             // parse field number into a double
              } catch (java.lang.NumberFormatException ex) {                                         // catch invalid number exception
+                
                 JOptionPane.showMessageDialog(
                     topLevelFrame, 
                     "Please enter a valid number", 
                     "Invalid Input", 
                     JOptionPane.INFORMATION_MESSAGE
-                );                                                                                  // show error message
+                );   
+                
+                //  
+                SwingUtilities.invokeLater(() -> {
+                    field.setText("");
+                });
                 return Double.NaN;                                                                  // return NaN to show that field is not a number
             }
         }
+    }
+
+    private void addDocumentListenerForAutomaticCalculations(JTextField textField) {
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+            
+            @Override 
+            public void insertUpdate(DocumentEvent e) {
+                calculateAll();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                calculateAll();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                calculateAll();
+            }
+        });
     }
 
 
