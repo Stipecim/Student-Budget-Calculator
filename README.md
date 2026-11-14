@@ -47,3 +47,12 @@ This is student budget calculator
         - Inside multiply chosen timePeriod with wages and other income recieved in that time period
         - after income divide that timePeriod again with annual income after tax
 ```
+- **Automatic calculations**
+```
+    Added functionality:
+        - addDocumentListenerForAutomaticCalculations added to every input field
+        - calculateAll
+
+    Added other:
+        - from SwingUtilities.invokelater() putting task inside que due to documentDocument processing event 
+```
