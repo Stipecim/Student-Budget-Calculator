@@ -22,6 +22,10 @@ import javax.swing.event.DocumentEvent;
 import java.awt.event.*;
 import java.awt.*;
 
+import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 // class definition
 public class BudgetBase extends JPanel {                                    // based on Swing JPanel
 
@@ -30,7 +34,6 @@ public class BudgetBase extends JPanel {                                    // b
     GridBagConstraints layoutConstraints = new GridBagConstraints();        // used to control layout
 
     // widgets which may have listeners and/or values
-    private JButton exitButton;                                             // Exit button
     private JTextField wagesField;                                          // Wages text field
     private JTextField loansField;                                          // Loans text field
     private JTextField otherField;                                          // Other field 
@@ -42,13 +45,34 @@ public class BudgetBase extends JPanel {                                    // b
     private JTextField totalAmountSpentField;                               // Total amount spent
     private JTextField remainingBalanceField;                               // Remaining balance 
 
+    // buttons 
+    private JButton exitButton;                                             // Exit button
+    private JButton undoButton;                                             // Undo button
+    
     private JRadioButton weeklyButton;                                      // Weekly radio button
     private JRadioButton monthlyButton;                                     // monthly radio button
     private JRadioButton yearlyButton;                                      // yearly radio button 
 
     private ButtonGroup periodGroup;                                        // One button can be on per group
 
+    // other types
     private TimePeriod timePeriod;                                          // Button group state for evaluating answers eg. toggled button weekly
+    
+    private final int MAX_SAVED_STATES = 100;                                // Maximum number of saved states
+    
+    private boolean restoringState = false;                                 // Prevent listeners from recording changes during Undo
+
+    // lists
+
+    private Deque<ArrayList<Object>> savedStates;     // Stack containing previous states
+   
+    private ArrayList<Object> currentState;                                 // Current application state
+
+    
+    
+
+    
+    
 
 
     // constructor - create UI  (dont need to change this)
@@ -200,8 +224,26 @@ public class BudgetBase extends JPanel {                                    // b
         exitButton = new JButton("Exit");
         addComponent(exitButton, 12, 0);  
 
+        // Row 12
+        undoButton = new JButton("Undo");
+        undoButton.setEnabled(false);
+
+        addComponent(undoButton, 12, 1);
+
+        // initialize undo history
+        initUndoHistory();
+
         // set up  listeners (in a spearate method)
         initListeners();
+    }
+
+    private void initUndoHistory() {
+
+        savedStates = new ArrayDeque<>(); 
+
+        currentState = loadState();
+
+        undoButton.setEnabled(false);
     }
 
     // set up listeners
@@ -212,7 +254,7 @@ public class BudgetBase extends JPanel {                                    // b
         weeklyButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 timePeriod = TimePeriod.WEEKLY;
-            
+                saveState();
                 calculateAll();
             }
         });
@@ -221,7 +263,7 @@ public class BudgetBase extends JPanel {                                    // b
         monthlyButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 timePeriod = TimePeriod.MONTHLY;
-
+                saveState();
                 calculateAll();
             }
         });
@@ -230,8 +272,15 @@ public class BudgetBase extends JPanel {                                    // b
         yearlyButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 timePeriod = TimePeriod.YEARLY;
-
+                saveState();
                 calculateAll();
+            }
+        });
+
+        // undoButton - loads previous state
+        undoButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                unloadState();
             }
         });
 
@@ -270,6 +319,113 @@ public class BudgetBase extends JPanel {                                    // b
                 }
             }
         });
+    }
+
+    // return state of all fields 
+    private ArrayList<Object> loadState() {
+
+        ArrayList<Object> tempState = new ArrayList<>();
+
+        // Collect income fields
+        tempState.add(wagesField.getText());         // index 0
+        tempState.add(loansField.getText());         // index 1
+        tempState.add(otherField.getText());         // index 2
+
+        // Collect expenditure fields
+        tempState.add(rentField.getText());          // index 3
+        tempState.add(foodField.getText());          // index 4
+        tempState.add(restaurantsField.getText());   // index 5
+
+        // Collect selected time period
+        tempState.add(timePeriod);                   // index 6
+
+        return tempState;
+    }
+
+    private void restoreFields(ArrayList<Object> state) {
+
+        // Restore income fields
+        wagesField.setText((String) state.get(0));
+        loansField.setText((String) state.get(1));
+        otherField.setText((String) state.get(2));
+
+        // Restore expenditure fields
+        rentField.setText((String) state.get(3));
+        foodField.setText((String) state.get(4));
+        restaurantsField.setText((String) state.get(5));
+
+        // Restore selected time period
+        timePeriod = (TimePeriod) state.get(6);
+
+        if (timePeriod == TimePeriod.WEEKLY) {
+            weeklyButton.setSelected(true);
+        }
+        else if (timePeriod == TimePeriod.MONTHLY) {
+            monthlyButton.setSelected(true);
+        }
+        else {
+            yearlyButton.setSelected(true);
+        }
+    }
+
+    // This saves previous state on stack
+    private void saveState() {
+
+        // Do not record changes caused by Undo
+        if (restoringState) {
+            return;
+        }
+
+        ArrayList<Object> newState = loadState();
+
+
+        // max states allowed before removing last state
+        if (savedStates.size() >= MAX_SAVED_STATES) {
+            savedStates.removeLast();
+        }
+
+        savedStates.push(currentState);
+
+        currentState = newState;
+
+        undoButton.setEnabled(true);
+    }
+    
+    // This unloads state from state stack to current state 
+    private ArrayList<Object> unloadState() {
+
+        // Nothing to undo
+        if (savedStates.isEmpty()) {
+            return currentState;
+        }
+
+        // Prevent DocumentListener from saving restored changes
+        restoringState = true;
+
+        try {
+
+            // Remove and retrieve newest saved state
+            ArrayList<Object> previousState = savedStates.pop();
+
+            // Restore GUI fields and radio buttons
+            restoreFields(previousState);
+
+            // Recalculate all derived values
+            calculateAll();
+
+            // Update current state
+            currentState = loadState();
+
+        } finally {
+
+            // Allow listeners to record changes again
+            restoringState = false;
+
+            // Disable Undo when the stack becomes empty
+            undoButton.setEnabled(!savedStates.isEmpty());
+        }
+
+        return currentState;
     }
 
     // add a component at specified row and column in UI.  (0,0) is top-left corner
@@ -481,19 +637,29 @@ public class BudgetBase extends JPanel {                                    // b
     private void addDocumentListenerForAutomaticCalculations(JTextField textField) {
         textField.getDocument().addDocumentListener(new DocumentListener() {
             
+            private void handleChange() {
+
+                if (restoringState) {
+                    return;
+                }
+
+                saveState();
+                calculateAll();
+            }
+
             @Override 
             public void insertUpdate(DocumentEvent e) {
-                calculateAll();
+                handleChange();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                calculateAll();
+               handleChange();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                calculateAll();
+                handleChange();
             }
         });
     }

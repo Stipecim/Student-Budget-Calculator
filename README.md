@@ -56,3 +56,21 @@ This is student budget calculator
     Added other:
         - from SwingUtilities.invokelater() putting task inside que due to documentDocument processing event 
 ```
+- **Undo feature**
+```
+    Added attributes:
+        - undoButton
+        - final int MAX_SAVED_STATES
+        - boolean restoringState
+        - Deque<ArrayList<Object>> savedStetes
+    Added functionality:
+        - initUndoHistory
+        - loadState
+        - restoreFields
+        - saveState
+        - unloadState
+    Changes: 
+        - ommited calculateButton
+        - added actionlistener to undoButton
+        - added handleChange for reusability 
+```

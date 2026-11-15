@@ -25,4 +25,5 @@ public class BudgetBaseTest
 
         assertEquals(value, bb.calculateTotalIncome() );
     }
+
 }
