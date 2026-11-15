@@ -11,7 +11,7 @@ Compile
 
 Run Test
 ```
-    java -cp "out;..\lib\*" org.junit.runner.JUnitCore BudgetBaseTest 
+    java -cp "Budget;..\lib\*" org.junit.runner.JUnitCore BudgetBaseTest 
 ```
 Run program
 ```
