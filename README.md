@@ -18,9 +18,9 @@ Run program
     java -cp Budget BudgetBase
 ```
 
-### What I have done
+# What I have done
 
-#### Basic System
+## Basic System
 - **Income calculator:**
 ```
     Added JTextField for GUI:
@@ -53,7 +53,7 @@ Run program
         - Dialog Message title and type of message 
 ```
 
-#### Extensions
+## Extensions
 
 - **Time Periods**
 ```
