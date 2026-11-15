@@ -11,40 +11,106 @@
 
 // Ehud Reiter Aug 204
 
-package Budget;
+//package Budget;
 
 // Swing imports
 import javax.swing.*;
+import javax.swing.event.DocumentListener;
+// import javax.swing.text.Document; 
+import javax.swing.event.DocumentEvent;
+
 import java.awt.event.*;
 import java.awt.*;
 
+import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 // class definition
-public class BudgetBase extends JPanel {    // based on Swing JPanel
+public class BudgetBase extends JPanel {                                    // based on Swing JPanel
 
     // high level UI stuff
-    JFrame topLevelFrame;  // top-level JFrame
-    GridBagConstraints layoutConstraints = new GridBagConstraints(); // used to control layout
+    JFrame topLevelFrame;                                                   // top-level JFrame
+    GridBagConstraints layoutConstraints = new GridBagConstraints();        // used to control layout
 
     // widgets which may have listeners and/or values
-    private JButton calculateButton;   // Calculate button
-    private JButton exitButton;        // Exit button
-    private JTextField wagesField;     // Wages text field
-    private JTextField loansField;     // Loans text field
-    private JTextField otherField;
-    private JTextField totalIncomeField; // Total Income field
-    private JTextField totalIncomeAfterIncomeTaxField;
+    private JTextField wagesField;                                          // Wages text field
+    private JTextField loansField;                                          // Loans text field
+    private JTextField otherField;                                          // Other field 
+    private JTextField totalIncomeField;                                    // Total Income field
+    private JTextField totalIncomeAfterIncomeTaxField;                      // Total Income after scottish income tax
+    private JTextField rentField;                                           // Amount spent on rent
+    private JTextField foodField;                                           // Amount spent on food
+    private JTextField restaurantsField;                                    // Amount spent on restaurants.
+    private JTextField totalAmountSpentField;                               // Total amount spent
+    private JTextField remainingBalanceField;                               // Remaining balance 
+
+    // buttons 
+    private JButton exitButton;                                             // Exit button
+    private JButton undoButton;                                             // Undo button
+    
+    private JRadioButton weeklyButton;                                      // Weekly radio button
+    private JRadioButton monthlyButton;                                     // monthly radio button
+    private JRadioButton yearlyButton;                                      // yearly radio button 
+
+    private ButtonGroup periodGroup;                                        // One button can be on per group
+
+    // other types
+    private TimePeriod timePeriod;                                          // Button group state for evaluating answers eg. toggled button weekly
+    
+    private final int MAX_SAVED_STATES = 100;                                // Maximum number of saved states
+    
+    private boolean restoringState = false;                                 // Prevent listeners from recording changes during Undo
+
+    // lists
+
+    private Deque<ArrayList<Object>> savedStates;                           // Stack containing previous states
+   
+    private ArrayList<Object> currentState;                                 // Current application state
+
+
 
     // constructor - create UI  (dont need to change this)
     public BudgetBase(JFrame frame) {
-        topLevelFrame = frame; // keep track of top-level frame
-        setLayout(new GridBagLayout());  // use GridBag layout
-        initComponents();  // initalise components
+        topLevelFrame = frame;                      // keep track of top-level frame
+        setLayout(new GridBagLayout());             // use GridBag layout
+        initComponents();                           // initalise components
     }
 
     // initialise componenents
     // Note that this method is quite long.  Can be shortened by putting Action Listener stuff in a separate method
     // will be generated automatically by IntelliJ, Eclipse, etc
     private void initComponents() { 
+
+        // initializing periodGroup component
+        periodGroup = new ButtonGroup();
+        
+        // initializing weakly radio buttons 
+        weeklyButton = new JRadioButton("Weekly");
+        monthlyButton = new JRadioButton("Monthly");
+        yearlyButton = new JRadioButton("Yearly");
+
+        // grouping initialized buttons 
+        periodGroup.add(weeklyButton);
+        periodGroup.add(monthlyButton);
+        periodGroup.add(yearlyButton);
+
+        // Select Monthly by default
+        yearlyButton.setSelected(true);
+
+        // default state of button
+        timePeriod = TimePeriod.YEARLY;
+
+        // Arrange buttons horizontally
+        JPanel periodPanel = new JPanel(new GridLayout(1, 3, 0, 0));
+
+        // adding buttons to the panel for gui display
+        periodPanel.add(weeklyButton);
+        periodPanel.add(monthlyButton);
+        periodPanel.add(yearlyButton);
+
+        // Top row 0 - period panel with radio buttons
+        addComponent(periodPanel, 0, 1);
 
         // Top row (0) - "INCOME" label
         JLabel incomeLabel = new JLabel("INCOME");
@@ -53,63 +119,165 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         // Row 1 - Wages label followed by wages textbox
         JLabel wagesLabel = new JLabel("Wages");
         addComponent(wagesLabel, 1, 0);
-
-        // Row 2 - Other label followed by "other" textbox
-        JLabel otherLabel = new JLabel("Other");
-        addComponent(otherLabel,3, 0);
-
-        otherField = new JTextField("", 10);
-        otherField.setHorizontalAlignment(JTextField.RIGHT);
-        addComponent(otherField, 3, 1);
-        // set up text field for entering wages
-        // Could create method to do below (since this is done several times)
-        wagesField = new JTextField("", 10);   // blank initially, with 10 columns
-        wagesField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
-        addComponent(wagesField, 1, 1);   
+        
 
         // Row 2 - Loans label followed by loans textbox
         JLabel loansLabel = new JLabel("Loans");
         addComponent(loansLabel, 2, 0);
 
+        // Row 3 - Other label followed by "other" textbox
+        JLabel otherLabel = new JLabel("Other");
+        addComponent(otherLabel,3, 0);
+
+        // Row 4 - rent label followed by rent textbox
+        JLabel rentLabel = new JLabel("Rent");
+        addComponent(rentLabel, 4, 0);
+
+        // Row 5 - food label followed by food textbox
+        JLabel foodLabel = new JLabel("Food");
+        addComponent(foodLabel, 5, 0);
+
+        // Row 6 - restaurants label followed by restaurants textbox
+        JLabel restaurantsLabel = new JLabel("Restaurants");
+        addComponent(restaurantsLabel, 6, 0);
+
+
+
+        // set up text field for entering wages
+        // Could create method to do below (since this is done several times)
+        wagesField = new JTextField("", 10);                                // blank initially, with 10 columns
+        wagesField.setHorizontalAlignment(JTextField.RIGHT) ;               // number is at right end of field
+        addComponent(wagesField, 1, 1); 
+
         // set up text box for entering loans
-        loansField = new JTextField("", 10);   // blank initially, with 10 columns
-        loansField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
+        loansField = new JTextField("", 10);                                // blank initially, with 10 columns
+        loansField.setHorizontalAlignment(JTextField.RIGHT) ;               // number is at right end of field
         addComponent(loansField, 2, 1); 
 
-        // Row 3 - Total Income label followed by total income field
-        JLabel totalIncomeLabel = new JLabel("Total Income");
-        addComponent(totalIncomeLabel, 4, 0);
+        otherField = new JTextField("", 10);
+        otherField.setHorizontalAlignment(JTextField.RIGHT);
+        addComponent(otherField, 3, 1);
 
-        // set up text box for displaying total income.  Users cam view, but cannot directly edit it
-        totalIncomeField = new JTextField("0", 10);   // 0 initially, with 10 columns
-        totalIncomeField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
-        totalIncomeField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
-        addComponent(totalIncomeField, 4, 1); 
+        rentField = new JTextField("", 10);
+        rentField.setHorizontalAlignment(JTextField.RIGHT);
+        addComponent(rentField, 4, 1);
+
+        foodField = new JTextField("", 10);
+        foodField.setHorizontalAlignment(JTextField.RIGHT);
+        addComponent(foodField, 5, 1);
+
+        restaurantsField = new JTextField("", 10);
+        restaurantsField.setHorizontalAlignment(JTextField.RIGHT);
+        addComponent(restaurantsField, 6, 1);
         
+
+
+        // Row 7 - total Income label followed by total income field
+        JLabel totalIncomeLabel = new JLabel("Total Income");
+        addComponent(totalIncomeLabel, 7, 0);
+
+        // Row 8 - total total Income After Income Tax Label followed by total Income After Income Tax field
         JLabel totalIncomeAfterIncomeTaxLabel = new JLabel("Total income after income tax");
-        addComponent(totalIncomeAfterIncomeTaxLabel, 5, 0);
+        addComponent(totalIncomeAfterIncomeTaxLabel, 8, 0);
+
+
+        // Row 9 - total amount spent label followed by textbox
+        JLabel totalAmountSpentLabel = new JLabel("Total Amount Spent");
+        addComponent(totalAmountSpentLabel, 9, 0);
+
+        // Row 10 - remaining balance label followed by textbox
+        JLabel remainingBalanceLabel = new JLabel("Remaining Balance");
+        addComponent(remainingBalanceLabel, 10, 0);
+
+
 
         // set up text box for displaying total income.  Users cam view, but cannot directly edit it
-        totalIncomeAfterIncomeTaxField = new JTextField("0", 10);   // 0 initially, with 10 columns
-        totalIncomeAfterIncomeTaxField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
-        totalIncomeAfterIncomeTaxField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
-        addComponent(totalIncomeAfterIncomeTaxField, 5, 1); 
+        totalIncomeField = new JTextField("0", 10);                         // 0 initially, with 10 columns
+        totalIncomeField.setHorizontalAlignment(JTextField.RIGHT) ;         // number is at right end of field
+        totalIncomeField.setEditable(false);                                // user cannot directly edit this field (ie, it is read-only)
+        addComponent(totalIncomeField, 7, 1); 
+        
+        
+        // set up text box for displaying total income.  Users cam view, but cannot directly edit it
+        totalIncomeAfterIncomeTaxField = new JTextField("0", 10);                       // 0 initially, with 10 columns
+        totalIncomeAfterIncomeTaxField.setHorizontalAlignment(JTextField.RIGHT) ;       // number is at right end of field
+        totalIncomeAfterIncomeTaxField.setEditable(false);                              // user cannot directly edit this field (ie, it is read-only)
+        addComponent(totalIncomeAfterIncomeTaxField, 8, 1); 
 
-        // Row 4 - Calculate Button
-        calculateButton = new JButton("Calculate");
-        addComponent(calculateButton, 6, 0);  
 
-        // Row 5 - Exit Button
+        totalAmountSpentField = new JTextField("0", 10);
+        totalAmountSpentField.setHorizontalAlignment(JTextField.RIGHT);
+        totalAmountSpentField.setEditable(false);
+        addComponent(totalAmountSpentField, 9, 1);
+
+        remainingBalanceField = new JTextField("0", 10);
+        remainingBalanceField.setHorizontalAlignment(JTextField.RIGHT);
+        remainingBalanceField.setEditable(false);
+        addComponent(remainingBalanceField, 10, 1);
+
+        // Row 12 - Exit Button
         exitButton = new JButton("Exit");
-        addComponent(exitButton, 7, 0);  
+        addComponent(exitButton, 12, 0);  
+
+        // Row 12
+        undoButton = new JButton("Undo");
+        undoButton.setEnabled(false);
+
+        addComponent(undoButton, 12, 1);
+
+        // initialize undo history
+        initUndoHistory();
 
         // set up  listeners (in a spearate method)
         initListeners();
     }
 
+    private void initUndoHistory() {
+
+        savedStates = new ArrayDeque<>(); 
+
+        currentState = loadState();
+
+        undoButton.setEnabled(false);
+    }
+
     // set up listeners
     // initially just for buttons, can add listeners for text fields
     private void initListeners() {
+
+        // Weekly radio button
+        weeklyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                timePeriod = TimePeriod.WEEKLY;
+                saveState();
+                calculateAll();
+            }
+        });
+
+        // Monthly radio button
+        monthlyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                timePeriod = TimePeriod.MONTHLY;
+                saveState();
+                calculateAll();
+            }
+        });
+
+        // Yearly radio button
+        yearlyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                timePeriod = TimePeriod.YEARLY;
+                saveState();
+                calculateAll();
+            }
+        });
+
+        // undoButton - loads previous state
+        undoButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                unloadState();
+            }
+        });
 
         // exitButton - exit program when pressed
         exitButton.addActionListener(new java.awt.event.ActionListener() {
@@ -118,41 +286,218 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
             }
         });
 
-        // calculateButton - call calculateTotalIncome() when pressed
-        calculateButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                calculateTotalIncome();
-                calculateIncomeAfterScottishIncomeTax();
-            }
-        });
-        // wagewsField - call calculateTotalIncome() when pressed
-        wagesField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                calculateTotalIncome();
-                calculateIncomeAfterScottishIncomeTax();
-            }
-        });
 
+        //event trigger after user enters/deletes single value to/from input field 
+        addDocumentListenerForAutomaticCalculations(wagesField);
+
+        addDocumentListenerForAutomaticCalculations(loansField);
+      
+        addDocumentListenerForAutomaticCalculations(otherField);
+
+        addDocumentListenerForAutomaticCalculations(foodField);
+
+        addDocumentListenerForAutomaticCalculations(rentField);
+
+        addDocumentListenerForAutomaticCalculations(restaurantsField);
+
+
+        // listens to remaining balance field being updated 
+        remainingBalanceField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+                double remainingBalance = getTextFieldValue(remainingBalanceField);
+
+                if (remainingBalance < 0) {
+                    remainingBalanceField.setForeground(Color.RED);
+                } else {
+                    remainingBalanceField.setForeground(Color.BLACK);
+                }
+            }
+        });
+    }
+
+    // return state of all fields 
+    private ArrayList<Object> loadState() {
+
+        ArrayList<Object> tempState = new ArrayList<>();
+
+        // Collect income fields
+        tempState.add(wagesField.getText());         // index 0
+        tempState.add(loansField.getText());         // index 1
+        tempState.add(otherField.getText());         // index 2
+
+        // Collect expenditure fields
+        tempState.add(rentField.getText());          // index 3
+        tempState.add(foodField.getText());          // index 4
+        tempState.add(restaurantsField.getText());   // index 5
+
+        // Collect selected time period
+        tempState.add(timePeriod);                   // index 6
+
+        return tempState;
+    }
+
+    private void restoreFields(ArrayList<Object> state) {
+
+        // Restore income fields
+        wagesField.setText((String) state.get(0));
+        loansField.setText((String) state.get(1));
+        otherField.setText((String) state.get(2));
+
+        // Restore expenditure fields
+        rentField.setText((String) state.get(3));
+        foodField.setText((String) state.get(4));
+        restaurantsField.setText((String) state.get(5));
+
+        // Restore selected time period
+        timePeriod = (TimePeriod) state.get(6);
+
+        if (timePeriod == TimePeriod.WEEKLY) {
+            weeklyButton.setSelected(true);
+        }
+        else if (timePeriod == TimePeriod.MONTHLY) {
+            monthlyButton.setSelected(true);
+        }
+        else {
+            yearlyButton.setSelected(true);
+        }
+    }
+
+    // This saves previous state on stack
+    private void saveState() {
+
+        // Do not record changes caused by Undo
+        if (restoringState) {
+            return;
+        }
+
+        ArrayList<Object> newState = loadState();
+
+
+        // max states allowed before removing last state
+        if (savedStates.size() == MAX_SAVED_STATES) {
+            savedStates.removeLast();
+        }
+
+        savedStates.push(currentState);
+
+        currentState = newState;
+
+        undoButton.setEnabled(true);
+    }
+    
+    // This unloads state from state stack to current state 
+    private ArrayList<Object> unloadState() {
+
+        // Nothing to undo
+        if (savedStates.isEmpty()) {
+            return currentState;
+        }
+
+        // Prevent DocumentListener from saving restored changes
+        restoringState = true;
+
+        try {
+
+            // Remove and retrieve newest saved state
+            ArrayList<Object> previousState = savedStates.pop();
+
+            // Restore GUI fields and radio buttons
+            restoreFields(previousState);
+
+            // Recalculate all derived values
+            calculateAll();
+
+            // Update current state
+            currentState = loadState();
+
+        } finally {
+
+            // Allow listeners to record changes again
+            restoringState = false;
+
+            // Disable Undo when the stack becomes empty
+            undoButton.setEnabled(!savedStates.isEmpty());
+        }
+
+        return currentState;
     }
 
     // add a component at specified row and column in UI.  (0,0) is top-left corner
     private void addComponent(Component component, int gridrow, int gridcol) {
-        layoutConstraints.fill = GridBagConstraints.HORIZONTAL;   // always use horixontsl filll
+        layoutConstraints.fill = GridBagConstraints.HORIZONTAL;                     // always use horixontsl filll
         layoutConstraints.gridx = gridcol;
         layoutConstraints.gridy = gridrow;
         add(component, layoutConstraints);
 
     }
 
-   
+    private void calculateAll() {
+        calculateTotalIncome();
+        calculateIncomeAfterScottishIncomeTax();
+        calculateExpenditure();
+        calculateRemainingBalance();
+    }
+    
+    private double calculateRemainingBalance() {
+
+        double totalAmountSpent = getTextFieldValue(totalAmountSpentField);
+        double totalIncomeAfterIncomeTax = getTextFieldValue(totalIncomeAfterIncomeTaxField);
+
+        remainingBalanceField.setText(String.format("%.2f", totalIncomeAfterIncomeTax - totalAmountSpent));
+        remainingBalanceField.postActionEvent();                                                                // trigger the action listener
+        return  totalIncomeAfterIncomeTax - totalAmountSpent; 
+    }
+
+    // updates tatalAmountSpentField after (eg, when Calculate is pressed)
+    // sums total expenditure for food, rent, restaurants(after VAT)
+    private double calculateExpenditure() {
+
+        double totalAmount = 0.0;
+
+        double rent = getTextFieldValue(rentField);
+        double food = getTextFieldValue(foodField);
+        double restaurants = getTextFieldValue(restaurantsField);
+
+        
+        if (Double.isNaN(rent) || Double.isNaN(food) || Double.isNaN(restaurants)) {
+            totalAmountSpentField.setText("");                                         // clear total amount spent field 
+            totalAmount = 0.0;
+            return totalAmount;                                                        // exit method and do nothing
+        }
+
+
+        if (restaurants > 0) restaurants = (restaurants * 0.2) + restaurants;          // after VAT deduction
+        totalAmount = rent + food + restaurants;
+
+
+        totalAmountSpentField.setText(String.format("%.2f",totalAmount));
+        return totalAmount;
+    }
+
+    // update totalIncomeAfterIncomeTaxField (eg, when Calculate is pressed)
+    // this algotirthm is based on Scottish income tax provided here https://www.mygov.scot/scottish-income-tax/current-income-tax-rates
+    /**
+     * Algorithm:
+     * 
+     *  timeperiod = 1(Year) || 12(Months) || 52 (Weeks)
+     *  
+     *  Multiply wages and other income source that does not include student loan 
+     *  with time period and then if annual income exceedes Personal allowence 
+     *  calculate tax for each band until band where persons annual income is. Add
+     *  all taxed bands. If annual income is higher 100000 than for every 2£ of 
+     *  income take 1£of Personal allowance. Finally divide time period with 
+     *  calculated annual income and then add student loans to it. 
+     *   
+     */
     private double calculateIncomeAfterScottishIncomeTax() {
 
-        double top = 125140;
-        double advanced = 75000;
-        double higher = 43662;
-        double intermediate = 29526;
-        double basic = 16537;
-        double starter = 12570;
+        final double top = 125140;
+        final double advanced = 75000;
+        final double higher = 43662;
+        final double intermediate = 29526;
+        final double basic = 16537;
+        final double starter = 12570;
 
         double tax = 0;
 
@@ -160,19 +505,37 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         double loans = getTextFieldValue(loansField);
         double other = getTextFieldValue(otherField);
         
-        double annualIncome = wages + other;
+        double annualIncome = (wages + other) * timePeriod.getValue();                      // e.g person recieves income monthly so time period is 12
 
         double totalIncomeAfterIncomeTax = 0;
 
+        if (Double.isNaN(wages) || 
+            Double.isNaN(loans) || 
+            Double.isNaN(other)
+            ) 
+        {
+            totalIncomeAfterIncomeTaxField.setText("");                                     // clear total income after income tax field
+            wages = 0.0;
+            return wages;                                                                   // exit method and do nothing
+        }
+
         // if bellow starter(Personal allowence) which is 12570
-        // this to remove unecessary overhead of 
+        // this to remove unecessary overhead of going through other conditionals
         if (annualIncome <= starter) {
 
             totalIncomeAfterIncomeTax = annualIncome - tax + loans;
-            totalIncomeAfterIncomeTaxField.setText(String.format("%.2f",totalIncomeAfterIncomeTax));
+            totalIncomeAfterIncomeTaxField
+            .setText(
+                String.format(
+                    "%.2f",
+                    totalIncomeAfterIncomeTax
+                )
+            );
+
             return totalIncomeAfterIncomeTax;
         }
 
+        
         if (annualIncome > starter) {
             tax += (Math.min(annualIncome, basic) - starter) * 0.19;
         }
@@ -203,10 +566,12 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
             tax += lostAllowance * 0.45;
         }
 
-        totalIncomeAfterIncomeTax = annualIncome - tax + loans;
+        totalIncomeAfterIncomeTax = ((annualIncome - tax) / timePeriod.getValue()) + loans;
         totalIncomeAfterIncomeTaxField.setText(String.format("%.2f",totalIncomeAfterIncomeTax));
         return totalIncomeAfterIncomeTax;
     }
+
+    
 
     // update totalIncomeField (eg, when Calculate is pressed)
     // use double to hold numbers, so user can type fractional amounts such as 134.50
@@ -219,14 +584,14 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
         // clear total field and return if any value is NaN (error)
         if (Double.isNaN(wages) || Double.isNaN(loans) || Double.isNaN(other)) {
-            totalIncomeField.setText("");  // clear total income field
+            totalIncomeField.setText("");                                                   // clear total income field
             wages = 0.0;
-            return wages;   // exit method and do nothing
+            return wages;                                                                   // exit method and do nothing
         }
 
         // otherwise calculate total income and update text field
         double totalIncome = wages + loans + other;
-        totalIncomeField.setText(String.format("%.2f",totalIncome));  // format with 2 digits after the .
+        totalIncomeField.setText(String.format("%.2f",totalIncome));                        // format with 2 digits after the .
         return totalIncome;
     }
 
@@ -236,25 +601,66 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     private double getTextFieldValue(JTextField field) {
 
         // get value as String from field
-        String fieldString = field.getText();  // get text from text field
+        String fieldString = field.getText();                                       // get text from text field
 
-        if (fieldString.isBlank()) {   // if text field is blank, return 0
+        if (fieldString.isBlank()) {                                                // if text field is blank, return 0
             return 0;
         }
 
         else {  // if text field is not blank, parse it into a double
             //return Double.parseDouble(fieldString);
             try {
-                return Double.parseDouble(fieldString);  // parse field number into a double
-             } catch (java.lang.NumberFormatException ex) {  // catch invalid number exception
-                JOptionPane.showMessageDialog(topLevelFrame, "Please enter a valid number");  // show error message
-                return Double.NaN;  // return NaN to show that field is not a number
+                return Double.parseDouble(fieldString);                                             // parse field number into a double
+             } catch (java.lang.NumberFormatException ex) {                                         // catch invalid number exception
+                
+                JOptionPane.showMessageDialog(
+                    topLevelFrame, 
+                    "Please enter a valid number", 
+                    "Invalid Input", 
+                    JOptionPane.INFORMATION_MESSAGE
+                );   
+                
+                //  
+                SwingUtilities.invokeLater(() -> {
+                    field.setText("");
+                });
+                return Double.NaN;                                                                  // return NaN to show that field is not a number
             }
         }
     }
 
+    private void addDocumentListenerForAutomaticCalculations(JTextField textField) {
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+            
+            private void handleChange() {
 
-// below is standard code to set up Swing, which students shouldnt need to edit much
+                if (restoringState) {
+                    return;
+                }
+
+                saveState();
+                calculateAll();
+            }
+
+            @Override 
+            public void insertUpdate(DocumentEvent e) {
+                handleChange();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+               handleChange();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                handleChange();
+            }
+        });
+    }
+
+
+    // below is standard code to set up Swing, which students shouldnt need to edit much
     // standard mathod to show UI
     private static void createAndShowGUI() {
  
@@ -284,4 +690,65 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     }
 
 
+
+    // Public setters for JUnit testing
+
+    public void setWagesField(String value) {
+        wagesField.setText(value);
+    }
+
+    public void setLoansField(String value) {
+        loansField.setText(value);
+    }
+
+    public void setOtherField(String value) {
+        otherField.setText(value);
+    }
+
+    public void setRentField(String value) {
+        rentField.setText(value);
+    }
+
+    public void setFoodField(String value) {
+        foodField.setText(value);
+    }
+
+    public void setRestaurantsField(String value) {
+        restaurantsField.setText(value);
+    }
+
+    // Simulate clicking the Undo button
+    public void clickUndoButton() {
+        undoButton.doClick();
+    }
+
+    // Public getters for JUnit testing
+
+    public String getWagesField() {
+        return wagesField.getText();
+    }
+
+    public String getLoansField() {
+        return loansField.getText();
+    }
+
+    public String getOtherField() {
+        return otherField.getText();
+    }
+
+    public String getRentField() {
+        return rentField.getText();
+    }
+
+    public String getFoodField() {
+        return foodField.getText();
+    }
+
+    public String getRestaurantsField() {
+        return restaurantsField.getText();
+    }
+
+    public Deque<ArrayList<Object>> getSavedStates() {
+        return savedStates;
+    }
 }
