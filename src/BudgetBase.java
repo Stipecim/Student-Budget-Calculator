@@ -64,15 +64,10 @@ public class BudgetBase extends JPanel {                                    // b
 
     // lists
 
-    private Deque<ArrayList<Object>> savedStates;     // Stack containing previous states
+    private Deque<ArrayList<Object>> savedStates;                           // Stack containing previous states
    
     private ArrayList<Object> currentState;                                 // Current application state
 
-    
-    
-
-    
-    
 
 
     // constructor - create UI  (dont need to change this)
@@ -380,7 +375,7 @@ public class BudgetBase extends JPanel {                                    // b
 
 
         // max states allowed before removing last state
-        if (savedStates.size() >= MAX_SAVED_STATES) {
+        if (savedStates.size() == MAX_SAVED_STATES) {
             savedStates.removeLast();
         }
 
@@ -695,4 +690,65 @@ public class BudgetBase extends JPanel {                                    // b
     }
 
 
+
+    // Public setters for JUnit testing
+
+    public void setWagesField(String value) {
+        wagesField.setText(value);
+    }
+
+    public void setLoansField(String value) {
+        loansField.setText(value);
+    }
+
+    public void setOtherField(String value) {
+        otherField.setText(value);
+    }
+
+    public void setRentField(String value) {
+        rentField.setText(value);
+    }
+
+    public void setFoodField(String value) {
+        foodField.setText(value);
+    }
+
+    public void setRestaurantsField(String value) {
+        restaurantsField.setText(value);
+    }
+
+    // Simulate clicking the Undo button
+    public void clickUndoButton() {
+        undoButton.doClick();
+    }
+
+    // Public getters for JUnit testing
+
+    public String getWagesField() {
+        return wagesField.getText();
+    }
+
+    public String getLoansField() {
+        return loansField.getText();
+    }
+
+    public String getOtherField() {
+        return otherField.getText();
+    }
+
+    public String getRentField() {
+        return rentField.getText();
+    }
+
+    public String getFoodField() {
+        return foodField.getText();
+    }
+
+    public String getRestaurantsField() {
+        return restaurantsField.getText();
+    }
+
+    public Deque<ArrayList<Object>> getSavedStates() {
+        return savedStates;
+    }
 }

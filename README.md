@@ -1,8 +1,26 @@
 # Student-Budget-Calculator
 This is student budget calculator
 
-## What I have done
-### Basic System
+# How to compile and run? 
+
+Compile
+```
+    cd src
+    javac -cp "..\lib\*" -d Budget BudgetBase.java BudgetBaseTest.java TimePeriod.java
+```
+
+Run Test
+```
+    java -cp "out;..\lib\*" org.junit.runner.JUnitCore BudgetBaseTest 
+```
+Run program
+```
+    java -cp Budget BudgetBase
+```
+
+### What I have done
+
+#### Basic System
 - **Income calculator:**
 ```
     Added JTextField for GUI:
@@ -35,7 +53,7 @@ This is student budget calculator
         - Dialog Message title and type of message 
 ```
 
-### Extensions
+#### Extensions
 
 - **Time Periods**
 ```
@@ -73,4 +91,11 @@ This is student budget calculator
         - ommited calculateButton
         - added actionlistener to undoButton
         - added handleChange for reusability 
+```
+- **JUnit testing:**
+```
+    - Added setters and getters for testing.
+    - Added `clickUndoButton()` to test Undo.
+    - Added `shouldUndoChanges()` to check previous states.
+    - Added `shouldLimitUndoOmitLastState()`
 ```
